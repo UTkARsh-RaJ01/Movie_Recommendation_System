@@ -43,8 +43,8 @@ st.markdown("""
         border-radius: 5px;
     }
     .review-negative {
-        background-color: #d4edda;
-        border-left: 4px solid #28a745;
+        background-color: #f8d7da;
+        border-left: 4px solid #dc3545;
         padding: 10px;
         margin: 5px 0;
         border-radius: 5px;
