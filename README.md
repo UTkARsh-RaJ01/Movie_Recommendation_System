@@ -4,7 +4,6 @@ A modern, interactive movie recommendation system built with **Streamlit** that 
 
 ![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)
 ![Streamlit](https://img.shields.io/badge/streamlit-v1.28.0-red.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ## ✨ Features
 
@@ -97,38 +96,13 @@ movie-recommendation-system/
 streamlit run streamlit_app.py --server.port 8501
 ```
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🙏 Acknowledgments
 
 - [The Movie Database (TMDb)](https://www.themoviedb.org/) for providing the movie API
 - [IMDb](https://www.imdb.com/) for movie reviews
 - [Streamlit](https://streamlit.io/) for the amazing web framework
 - scikit-learn community for machine learning tools
-
-## 📞 Support
-
-If you have any questions or run into issues:
-
-1. Check the [Issues](https://github.com/YOUR_USERNAME/movie-recommendation-system/issues) page
-2. Create a new issue if your problem isn't already listed
-3. Provide detailed information about your setup and the error you're encountering
-
 ## 🎬 Demo
-
-[Add screenshots or GIF demos of your application here]
 
 ---
 
