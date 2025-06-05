@@ -69,18 +69,20 @@ if 'tmdb_api_key' not in st.session_state:
 
 @st.cache_data
 def load_models():
-    """Load the trained models and data"""
     try:
-        # Load models from root directory
-        nlp_model = pickle.load(open('nlp_model.pkl', 'rb'))
-        vectorizer = pickle.load(open('tranform.pkl', 'rb'))
-        
-        # Load movie data from root directory
         data = pd.read_csv('main_data.csv')
         
-        return nlp_model, vectorizer, data
+        try:
+            nlp_model = pickle.load(open('nlp_model.pkl', 'rb'))
+            vectorizer = pickle.load(open('tranform.pkl', 'rb'))
+            return nlp_model, vectorizer, data
+        except Exception as model_error:
+            st.warning(f"Could not load sentiment analysis models: {str(model_error)}")
+            st.info("The app will work without sentiment analysis. Only movie recommendations will be available.")
+            return None, None, data
+            
     except Exception as e:
-        st.error(f"Error loading models: {str(e)}")
+        st.error(f"Error loading data: {str(e)}")
         st.error("Please make sure you have run 'python setup_files.py' first to copy the required files.")
         return None, None, None
 
@@ -197,14 +199,17 @@ def get_movie_reviews(imdb_id, nlp_model, vectorizer):
             review_elements = soup.find_all("div", {"class": "ipc-html-content-inner-div"})
             
             reviews_data = []
-            for review_elem in review_elements[:10]:  # Limit to 10 reviews
+            for review_elem in review_elements[:10]:
                 if review_elem.string:
                     review_text = review_elem.string
                     
-                    # Predict sentiment
-                    review_vector = vectorizer.transform([review_text])
-                    sentiment_pred = nlp_model.predict(review_vector)[0]
-                    sentiment = 'Positive' if sentiment_pred else 'Negative'
+                    try:
+                        review_vector = vectorizer.transform([review_text])
+                        sentiment_pred = nlp_model.predict(review_vector)[0]
+                        sentiment = 'Positive' if sentiment_pred else 'Negative'
+                    except Exception as vectorizer_error:
+                        sentiment = 'Unknown'
+                        st.warning(f"Sentiment analysis unavailable due to model compatibility: {str(vectorizer_error)}")
                     
                     reviews_data.append({
                         'text': review_text,
@@ -219,23 +224,21 @@ def get_movie_reviews(imdb_id, nlp_model, vectorizer):
         return []
 
 def main():
-    # Load models and data
     nlp_model, vectorizer, data = load_models()
     
-    if nlp_model is None or vectorizer is None or data is None:
-        st.error("Failed to load required models and data. Please check if all files are present.")
+    if data is None:
+        st.error("Failed to load movie data. Please check if all files are present.")
         st.info("Make sure to run: `python setup_files.py` first to copy the required files.")
         return
     
-    # Create similarity matrix
     similarity = create_similarity_matrix(data)
     if similarity is None:
         return
     
-    # Main header
     st.markdown('<h1 class="main-header">🎬 Movie Recommendation System</h1>', unsafe_allow_html=True)
     
-    # Sidebar for TMDb API key
+    sentiment_available = nlp_model is not None and vectorizer is not None
+    
     with st.sidebar:
         st.header("⚙️ Configuration")
         
@@ -243,7 +246,8 @@ def main():
             "TMDb API Key", 
             value=st.session_state.tmdb_api_key,
             help="Get your API key from https://www.themoviedb.org/",
-            key="api_key_input"
+            key="api_key_input",
+            type="password"
         )
         
         if api_key != st.session_state.tmdb_api_key:
@@ -276,6 +280,9 @@ def main():
         5. View cast information and sentiment analysis of reviews
         """)
         
+        if not sentiment_available:
+            st.warning("⚠️ Sentiment analysis unavailable due to model compatibility")
+        
         st.markdown("---")
         st.header("📊 Dataset Info")
         if data is not None:
@@ -284,13 +291,10 @@ def main():
             for movie in data['movie_title'].head(5):
                 st.write(f"• {movie.title()}")
     
-    # Movie search section
     st.header("🔍 Search Movies")
     
-    # Get movie suggestions for autocomplete
     movie_suggestions = sorted(data['movie_title'].str.title().tolist())
     
-    # Movie search input
     col1, col2 = st.columns([3, 1])
     
     with col1:
@@ -304,21 +308,18 @@ def main():
     with col2:
         search_button = st.button("🔍 Get Recommendations", type="primary")
     
-    # Process movie search
     if search_button and selected_movie:
         if not st.session_state.tmdb_api_key:
             st.warning("Please enter your TMDb API key in the sidebar.")
             return
         
         with st.spinner("Finding similar movies..."):
-            # Get recommendations
             recommendations = get_movie_recommendations(selected_movie, data, similarity)
             
-            if isinstance(recommendations, str):  # Error message
+            if isinstance(recommendations, str):
                 st.error(recommendations)
                 return
             
-            # Get movie details from TMDb
             movie_details, cast_data = get_movie_details_from_tmdb(selected_movie, st.session_state.tmdb_api_key)
             
             if movie_details:
@@ -332,7 +333,6 @@ def main():
             else:
                 st.error("Could not fetch movie details from TMDb. Please check your API key and movie name.")
     
-    # Display results if available
     if st.session_state.recommendations_data:
         display_movie_details(st.session_state.recommendations_data, nlp_model, vectorizer, st.session_state.tmdb_api_key, data, similarity)
 
@@ -397,26 +397,36 @@ def display_movie_details(data_dict, nlp_model, vectorizer, api_key, movie_data,
                 st.write(f"*{actor['character']}*")
     
     # Reviews section
-    if movie_details.get('imdb_id'):
+    if movie_details.get('imdb_id') and nlp_model is not None and vectorizer is not None:
         st.subheader("📝 Movie Reviews & Sentiment Analysis")
         
         with st.spinner("Analyzing movie reviews..."):
             reviews = get_movie_reviews(movie_details['imdb_id'], nlp_model, vectorizer)
         
         if reviews:
-            # Show sentiment summary
             positive_reviews = sum(1 for r in reviews if r['sentiment'] == 'Positive')
-            negative_reviews = len(reviews) - positive_reviews
+            negative_reviews = sum(1 for r in reviews if r['sentiment'] == 'Negative')
+            unknown_reviews = sum(1 for r in reviews if r['sentiment'] == 'Unknown')
             
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
             col1.metric("Total Reviews", len(reviews))
-            col2.metric("Positive", positive_reviews, delta=f"{positive_reviews/len(reviews)*100:.1f}%")
-            col3.metric("Negative", negative_reviews, delta=f"{negative_reviews/len(reviews)*100:.1f}%")
+            if positive_reviews > 0:
+                col2.metric("Positive", positive_reviews, delta=f"{positive_reviews/len(reviews)*100:.1f}%")
+            if negative_reviews > 0:
+                col3.metric("Negative", negative_reviews, delta=f"{negative_reviews/len(reviews)*100:.1f}%")
+            if unknown_reviews > 0:
+                col4.metric("Unknown", unknown_reviews)
             
-            # Show individual reviews
             for review in reviews:
-                sentiment_class = "review-positive" if review['sentiment'] == 'Positive' else "review-negative"
-                sentiment_emoji = "😊" if review['sentiment'] == 'Positive' else "😞"
+                if review['sentiment'] == 'Positive':
+                    sentiment_class = "review-positive"
+                    sentiment_emoji = "😊"
+                elif review['sentiment'] == 'Negative':
+                    sentiment_class = "review-negative"
+                    sentiment_emoji = "😞"
+                else:
+                    sentiment_class = "review-negative"
+                    sentiment_emoji = "❓"
                 
                 st.markdown(f"""
                 <div class="{sentiment_class}">
@@ -426,6 +436,9 @@ def display_movie_details(data_dict, nlp_model, vectorizer, api_key, movie_data,
                 """, unsafe_allow_html=True)
         else:
             st.info("No reviews found for this movie.")
+    elif movie_details.get('imdb_id'):
+        st.subheader("📝 Movie Reviews")
+        st.info("Sentiment analysis is currently unavailable due to model compatibility issues. Only movie recommendations are available.")
     
     # Recommendations section
     st.subheader("🎯 Similar Movies You Might Like")
