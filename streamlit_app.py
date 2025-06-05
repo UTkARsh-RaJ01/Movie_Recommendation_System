@@ -43,8 +43,15 @@ st.markdown("""
         border-radius: 5px;
     }
     .review-negative {
-        background-color: #f8d7da;
-        border-left: 4px solid #dc3545;
+        background-color: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+    }
+    .review-neutral {
+        background-color: #e2e3e5;
+        border-left: 4px solid #6c757d;
         padding: 10px;
         margin: 5px 0;
         border-radius: 5px;
@@ -184,6 +191,22 @@ def get_movie_details_from_tmdb(movie_title, api_key):
         st.error(f"Unexpected error: {str(e)}")
         return None, None
 
+def simple_sentiment_analysis(text):
+    """Simple sentiment analysis using keyword matching"""
+    positive_words = ['good', 'great', 'excellent', 'amazing', 'awesome', 'fantastic', 'wonderful', 'brilliant', 'perfect', 'outstanding', 'superb', 'magnificent', 'incredible', 'spectacular', 'marvelous', 'love', 'loved', 'like', 'enjoy', 'enjoyed', 'best', 'better', 'beautiful', 'stunning', 'impressive', 'remarkable', 'extraordinary']
+    negative_words = ['bad', 'terrible', 'awful', 'horrible', 'worst', 'hate', 'hated', 'boring', 'disappointing', 'poor', 'weak', 'stupid', 'ridiculous', 'pathetic', 'waste', 'sucks', 'sucked', 'disgusting', 'annoying', 'irritating', 'frustrating', 'mediocre', 'bland', 'dull', 'confusing']
+    
+    text_lower = text.lower()
+    positive_count = sum(1 for word in positive_words if word in text_lower)
+    negative_count = sum(1 for word in negative_words if word in text_lower)
+    
+    if positive_count > negative_count:
+        return 'Positive'
+    elif negative_count > positive_count:
+        return 'Negative'
+    else:
+        return 'Neutral'
+
 def get_movie_reviews(imdb_id, nlp_model, vectorizer):
     """Scrape and analyze movie reviews from IMDb"""
     try:
@@ -204,12 +227,14 @@ def get_movie_reviews(imdb_id, nlp_model, vectorizer):
                     review_text = review_elem.string
                     
                     try:
-                        review_vector = vectorizer.transform([review_text])
-                        sentiment_pred = nlp_model.predict(review_vector)[0]
-                        sentiment = 'Positive' if sentiment_pred else 'Negative'
-                    except Exception as vectorizer_error:
-                        sentiment = 'Unknown'
-                        st.warning(f"Sentiment analysis unavailable due to model compatibility: {str(vectorizer_error)}")
+                        if nlp_model is not None and vectorizer is not None:
+                            review_vector = vectorizer.transform([review_text])
+                            sentiment_pred = nlp_model.predict(review_vector)[0]
+                            sentiment = 'Positive' if sentiment_pred else 'Negative'
+                        else:
+                            sentiment = simple_sentiment_analysis(review_text)
+                    except Exception:
+                        sentiment = simple_sentiment_analysis(review_text)
                     
                     reviews_data.append({
                         'text': review_text,
@@ -406,7 +431,7 @@ def display_movie_details(data_dict, nlp_model, vectorizer, api_key, movie_data,
         if reviews:
             positive_reviews = sum(1 for r in reviews if r['sentiment'] == 'Positive')
             negative_reviews = sum(1 for r in reviews if r['sentiment'] == 'Negative')
-            unknown_reviews = sum(1 for r in reviews if r['sentiment'] == 'Unknown')
+            neutral_reviews = sum(1 for r in reviews if r['sentiment'] == 'Neutral')
             
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Total Reviews", len(reviews))
@@ -414,23 +439,23 @@ def display_movie_details(data_dict, nlp_model, vectorizer, api_key, movie_data,
                 col2.metric("Positive", positive_reviews, delta=f"{positive_reviews/len(reviews)*100:.1f}%")
             if negative_reviews > 0:
                 col3.metric("Negative", negative_reviews, delta=f"{negative_reviews/len(reviews)*100:.1f}%")
-            if unknown_reviews > 0:
-                col4.metric("Unknown", unknown_reviews)
+            if neutral_reviews > 0:
+                col4.metric("Neutral", neutral_reviews)
             
-            for review in reviews:
+            for i, review in enumerate(reviews, 1):
                 if review['sentiment'] == 'Positive':
                     sentiment_class = "review-positive"
-                    sentiment_emoji = "😊"
+                    sentiment_emoji = "👤"
                 elif review['sentiment'] == 'Negative':
                     sentiment_class = "review-negative"
-                    sentiment_emoji = "😞"
+                    sentiment_emoji = "👤"
                 else:
-                    sentiment_class = "review-negative"
-                    sentiment_emoji = "❓"
+                    sentiment_class = "review-neutral"
+                    sentiment_emoji = "👤"
                 
                 st.markdown(f"""
                 <div class="{sentiment_class}">
-                    <strong>{sentiment_emoji} {review['sentiment']} Review</strong><br>
+                    <strong>{sentiment_emoji} Person {i} - {review['sentiment']} Review</strong><br>
                     {review['text'][:300]}{'...' if len(review['text']) > 300 else ''}
                 </div>
                 """, unsafe_allow_html=True)

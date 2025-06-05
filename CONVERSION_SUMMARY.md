@@ -7,7 +7,7 @@ Successfully converted the AJAX Movie Recommendation System from Flask to Stream
 
 ### ✅ New Files Created:
 1. **`streamlit_app.py`** - Main Streamlit application
-2. **`requirements_streamlit.txt`** - Updated dependencies for Streamlit
+2. **`requirements.txt`** - Updated dependencies for Streamlit
 3. **`setup_files.py`** - Script to copy required files to root directory
 4. **`install_and_run.py`** - One-click setup and installation script
 5. **`README_STREAMLIT.md`** - Comprehensive documentation
@@ -78,7 +78,7 @@ python install_and_run.py
 ### Option 2: Manual Setup
 ```bash
 # Install dependencies
-pip install -r requirements_streamlit.txt
+pip install -r requirements.txt
 
 # Copy required files
 python setup_files.py

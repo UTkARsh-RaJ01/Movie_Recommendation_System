@@ -91,7 +91,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Setup failed: {e}")
         print("💡 Try running the individual steps manually:")
-        print("   1. pip install -r requirements_streamlit.txt")
+        print("   1. pip install -r requirements.txt")
         print("   2. python setup_files.py")
         print("   3. streamlit run streamlit_app.py")
 

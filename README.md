@@ -35,7 +35,7 @@ python install_and_run.py
 ```bash
 git clone https://github.com/YOUR_USERNAME/movie-recommendation-system.git
 cd movie-recommendation-system
-pip install -r requirements_streamlit.txt
+pip install -r requirements.txt
 python setup_files.py
 streamlit run streamlit_app.py
 ```
@@ -75,7 +75,7 @@ streamlit run streamlit_app.py
 ```
 movie-recommendation-system/
 ├── streamlit_app.py              # Main Streamlit application
-├── requirements_streamlit.txt     # Python dependencies
+├── requirements.txt              # Python dependencies
 ├── setup_files.py               # Setup script for model files
 ├── install_and_run.py           # Automated installation script
 ├── main_data.csv                # Movie dataset

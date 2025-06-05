@@ -31,7 +31,7 @@ A modern, interactive movie recommendation system built with Streamlit that prov
 
 2. **Install Required Packages**
    ```bash
-   pip install -r requirements_streamlit.txt
+   pip install -r requirements.txt
    ```
 
 3. **Setup Data Files**
@@ -130,7 +130,7 @@ export TMDB_API_KEY="your_api_key_here"
    - Try a different movie name
 
 3. **Package import errors**
-   - Install requirements: `pip install -r requirements_streamlit.txt`
+   - Install requirements: `pip install -r requirements.txt`
    - Try upgrading pip: `pip install --upgrade pip`
 
 4. **Streamlit not found**
