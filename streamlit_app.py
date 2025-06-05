@@ -422,8 +422,14 @@ def display_movie_details(data_dict, nlp_model, vectorizer, api_key, movie_data,
                 st.write(f"*{actor['character']}*")
     
     # Reviews section
-    if movie_details.get('imdb_id') and nlp_model is not None and vectorizer is not None:
-        st.subheader("📝 Movie Reviews & Sentiment Analysis")
+    if movie_details.get('imdb_id'):
+        if nlp_model is not None and vectorizer is not None:
+            st.subheader("📝 Movie Reviews & Sentiment Analysis")
+            analysis_method = "Advanced ML Model"
+        else:
+            st.subheader("📝 Movie Reviews & Sentiment Analysis")
+            analysis_method = "Keyword-Based Analysis"
+            st.info("ℹ️ Using fallback sentiment analysis (keyword-based) as ML models are unavailable.")
         
         with st.spinner("Analyzing movie reviews..."):
             reviews = get_movie_reviews(movie_details['imdb_id'], nlp_model, vectorizer)
@@ -461,9 +467,6 @@ def display_movie_details(data_dict, nlp_model, vectorizer, api_key, movie_data,
                 """, unsafe_allow_html=True)
         else:
             st.info("No reviews found for this movie.")
-    elif movie_details.get('imdb_id'):
-        st.subheader("📝 Movie Reviews")
-        st.info("Sentiment analysis is currently unavailable due to model compatibility issues. Only movie recommendations are available.")
     
     # Recommendations section
     st.subheader("🎯 Similar Movies You Might Like")
