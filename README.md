@@ -19,7 +19,7 @@ A modern, interactive movie recommendation system built with **Streamlit** that 
 ### Prerequisites
 
 - Python 3.8 or higher
-- TMDb API key ([Get it free here](https://www.themoviedb.org/settings/api))
+- TMDb API key 
 
 ### Installation
 
